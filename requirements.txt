@@ -10,3 +10,5 @@ pypdf
 fastapi
 uvicorn[standard]
 python-multipart
+rank_bm25
+langchain-classic

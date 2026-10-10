@@ -105,7 +105,7 @@
 
             questionInput.focus();
         } catch {
-            uploadStatus.textContent = 'Upload failed — is the server running?';
+            uploadStatus.textContent = 'Upload failed. Please check the server logs.';
             uploadStatus.className = 'upload-status error';
             uploadCard.classList.remove('processing');
         }
@@ -223,7 +223,7 @@
             addMessage(data.answer, 'ai');
         } catch {
             removeTyping();
-            addMessage('Something went wrong. Is the server running?', 'ai');
+            addMessage('Something went wrong processing your request. Please check the server logs.', 'ai');
         } finally {
             sendBtn.disabled = !questionInput.value.trim();
             questionInput.focus();

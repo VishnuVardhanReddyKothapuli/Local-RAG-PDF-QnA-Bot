@@ -9,7 +9,7 @@ Built with **FastAPI**, **LangChain**, **Ollama**, and **ChromaDB**, it provides
 ## ✨ Features
 
 - **Upload any PDF** — drag & drop or click to browse
-- **Instant semantic search** — documents are chunked, embedded, and indexed in a local vector store
+- **Instant hybrid search** — combines semantic search (ChromaDB) with keyword search (BM25) using an EnsembleRetriever
 - **AI-powered answers** — context-aware responses using a local LLM via Ollama
 - **100% private** — everything runs on your machine, no API keys, no cloud
 - **ChatGPT-style UI** — sidebar, chat history, typing indicators, auto-resizing input
@@ -133,8 +133,8 @@ curl -X POST http://localhost:8000/query \
 1. **Upload** — user uploads a PDF through the web UI
 2. **Chunk** — the document is split into overlapping text chunks (400 chars, 40 overlap)
 3. **Embed** — each chunk is embedded using `all-MiniLM-L6-v2` via HuggingFace
-4. **Index** — embeddings are stored in a local ChromaDB vector store
-5. **Query** — user's question is embedded, top-3 similar chunks are retrieved
+4. **Index** — chunks are indexed in ChromaDB for semantic search and BM25 for keyword search
+5. **Query** — user's question retrieves the top chunks using an ensemble of both search methods (hybrid search)
 6. **Answer** — retrieved context + question are sent to `llama3.2` via Ollama to generate an answer
 
 ---

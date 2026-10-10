@@ -14,6 +14,8 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
+from langchain_community.retrievers import BM25Retriever
+from langchain_classic.retrievers import EnsembleRetriever
 
 rag_chain = None
 uploaded_filename = None
@@ -24,8 +26,8 @@ def build_rag_chain(pdf_path: str):
     docs = loader.load()
 
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=400,
-        chunk_overlap=40,
+        chunk_size=1000,
+        chunk_overlap=200,
     )
     splits = text_splitter.split_documents(docs)
 
@@ -33,16 +35,23 @@ def build_rag_chain(pdf_path: str):
         model_name='sentence-transformers/all-MiniLM-L6-v2',
     )
     vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings)
-    retriever = vectorstore.as_retriever(search_kwargs={'k': 3})
+    chroma_retriever = vectorstore.as_retriever(search_kwargs={'k': 5})
+    
+    bm25_retriever = BM25Retriever.from_documents(splits)
+    bm25_retriever.k = 5
+    
+    retriever = EnsembleRetriever(
+        retrievers=[bm25_retriever, chroma_retriever], weights=[0.5, 0.5]
+    )
 
-    template = """You are a helpful assistant that answers questions using the provided context.
+    template = """You are a helpful assistant that provides detailed and comprehensive answers using the provided context.
 
 Context:
 {context}
 
 Question: {question}
 
-Answer the question based on the context above. If the context doesn't contain enough
+Provide a thorough, detailed answer to the question based on the context above. If the context doesn't contain enough
 information, say so honestly."""
 
     prompt = ChatPromptTemplate.from_template(template)
