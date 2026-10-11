@@ -1,144 +1,257 @@
-# 📄 Local RAG — PDF Q&A Bot
+# Local RAG PDF Q&A Bot
 
-A fully local, privacy-first **Retrieval-Augmented Generation** chatbot that lets you upload any PDF document and ask natural language questions about its content. No data ever leaves your machine — the LLM, embeddings, and vector store all run locally.
+A privacy-focused Retrieval-Augmented Generation (RAG) application that allows users to upload PDF documents and ask questions about their content through a simple web interface.
 
-Built with **FastAPI**, **LangChain**, **Ollama**, and **ChromaDB**, it provides a clean ChatGPT-style web interface for interacting with your documents.
+The application combines semantic search and keyword-based retrieval to find relevant document passages, then uses a locally running LLM to generate context-aware answers. It is built with Python, FastAPI, LangChain, Ollama, and ChromaDB.
 
----
+## Features
 
-## ✨ Features
+- **PDF Upload:** Upload PDF documents directly through the web interface.
+- **Hybrid Search:** Combines semantic retrieval using ChromaDB with keyword-based retrieval using BM25.
+- **Context-Aware Answers:** Uses retrieved document passages to generate relevant responses with a local LLM.
+- **Local LLM Inference:** Runs Llama 3.2 through Ollama without requiring a cloud-based LLM API.
+- **Local Vector Storage:** Stores document embeddings in ChromaDB for semantic retrieval.
+- **Text Chunking:** Splits documents into overlapping chunks to improve retrieval.
+- **REST API:** Provides FastAPI endpoints for document upload and question answering.
+- **Simple Web Interface:** Interact with uploaded documents through an HTML, CSS, and JavaScript frontend.
 
-- **Upload any PDF** — drag & drop or click to browse
-- **Instant hybrid search** — combines semantic search (ChromaDB) with keyword search (BM25) using an EnsembleRetriever
-- **AI-powered answers** — context-aware responses using a local LLM via Ollama
-- **100% private** — everything runs on your machine, no API keys, no cloud
-- **ChatGPT-style UI** — sidebar, chat history, typing indicators, auto-resizing input
-- **Fast API backend** — clean REST endpoints for upload and query
+## Tech Stack
 
----
+| Component | Technology |
+|---|---|
+| Programming Language | Python |
+| Backend | FastAPI |
+| LLM | Llama 3.2 via Ollama |
+| LLM Framework | LangChain |
+| Embeddings | HuggingFace `all-MiniLM-L6-v2` |
+| Vector Database | ChromaDB |
+| Keyword Retrieval | BM25 |
+| Hybrid Retrieval | LangChain `EnsembleRetriever` |
+| PDF Processing | PyPDF |
+| Text Splitting | RecursiveCharacterTextSplitter |
+| Frontend | HTML, CSS, JavaScript |
+| Server | Uvicorn |
 
-## 🧩 Tech Stack
+## How It Works
 
-| Layer        | Technology                                  |
-|--------------|---------------------------------------------|
-| Backend      | FastAPI (Python)                            |
-| LLM          | Ollama — llama3.2                           |
-| Embeddings   | HuggingFace — all-MiniLM-L6-v2             |
-| Vector Store | ChromaDB                                    |
-| Framework    | LangChain                                   |
-| Frontend     | HTML / CSS / JavaScript (vanilla)           |
+The application follows a Retrieval-Augmented Generation pipeline:
 
----
+1. **PDF Upload:** The user uploads a PDF through the web interface.
+2. **Text Extraction:** PyPDF extracts text and page information from the document.
+3. **Text Chunking:** The extracted content is divided into chunks of 1,000 characters with a 200-character overlap.
+4. **Embedding Generation:** HuggingFace's `all-MiniLM-L6-v2` model converts the chunks into vector embeddings.
+5. **Indexing:** The chunks are indexed in ChromaDB for semantic search and BM25 for keyword-based retrieval.
+6. **Hybrid Retrieval:** An EnsembleRetriever combines both retrieval methods with equal weights and retrieves up to five results from each retriever.
+7. **Answer Generation:** The retrieved context and user question are passed to Llama 3.2 through Ollama.
+8. **Response Delivery:** The generated answer is returned through the FastAPI backend and displayed in the interface.
 
-## 📋 Prerequisites
+## Architecture
 
-- [Python 3.10+](https://www.python.org/downloads/)
-- [Ollama](https://ollama.com/) installed and running
-- Pull the model:
-  ```bash
-  ollama pull llama3.2
-  ```
+```text
+                PDF Document
+                     |
+                     v
+              PDF Text Extraction
+                     |
+                     v
+                Text Chunking
+              (1000 / 200 overlap)
+                     |
+                     v
+             Embedding Generation
+                     |
+             +-------+-------+
+             |               |
+             v               v
+         ChromaDB           BM25
+      Semantic Search   Keyword Search
+             |               |
+             +-------+-------+
+                     |
+                     v
+             Hybrid Retrieval
+                     |
+                     v
+             Retrieved Context
+                     |
+                     v
+              Ollama Llama 3.2
+                     |
+                     v
+              Generated Answer
+                     |
+                     v
+              Web Interface
+```
 
----
+## Prerequisites
 
-## 🚀 Quick Start
+Before running the application, install the following:
+
+- Python 3.10 or later
+- [Ollama](https://ollama.com/)
+- Git
+
+Download the required LLM using Ollama:
 
 ```bash
-# Clone the repo
+ollama pull llama3.2
+```
+
+Make sure Ollama is running before starting the application.
+
+## Installation and Setup
+
+### 1. Clone the repository
+
+```bash
 git clone https://github.com/VishnuVardhanReddyKothapuli/Local-RAG-PDF-QnA-Bot.git
+
 cd Local-RAG-PDF-QnA-Bot
+```
 
-# Create and activate virtual environment
+### 2. Create a virtual environment
+
+```bash
 python -m venv .venv
-# Windows
+```
+
+Activate the environment.
+
+**Windows:**
+
+```bash
 .venv\Scripts\activate
-# macOS / Linux
+```
+
+**macOS/Linux:**
+
+```bash
 source .venv/bin/activate
+```
 
-# Install dependencies
+### 3. Install dependencies
+
+```bash
 pip install -r requirements.txt
+```
 
-# Start the server
+### 4. Start the application
+
+```bash
 uvicorn main:app --reload
 ```
 
-Open **http://localhost:8000** in your browser, upload a PDF, and start asking questions.
+Open the application in your browser:
 
----
+http://127.0.0.1:8000
 
-## 🐳 Docker
+Upload a PDF document and start asking questions about its contents.
 
-### Build & Run
+## API Endpoints
 
-```bash
-docker build -t localrag .
-docker run -d --name localrag -p 8000:8000 --network host localrag
-```
+The application exposes the following REST endpoints:
 
-> `--network host` allows the container to reach Ollama on the host. On macOS/Windows Docker Desktop, use `host.docker.internal` instead.
-
-### Docker Compose
-
-```bash
-docker compose up -d
-```
-
----
-
-## 📁 Project Structure
-
-```
-Local-RAG-PDF-QnA-Bot/
-├── main.py              # FastAPI app + RAG pipeline
-├── requirements.txt     # Python dependencies
-├── Dockerfile           # Container image
-├── docker-compose.yml   # Compose orchestration
-├── .dockerignore
-├── .gitignore
-├── static/
-│   ├── index.html       # Chat UI
-│   ├── style.css        # Styling
-│   └── app.js           # Frontend logic
-└── uploads/             # User-uploaded PDFs (runtime)
-```
-
----
-
-## 🔌 API Endpoints
-
-| Method | Endpoint  | Description              |
-|--------|-----------|--------------------------|
-| GET    | `/`       | Serves the chat UI       |
-| POST   | `/upload` | Upload and index a PDF   |
-| POST   | `/query`  | Ask a question           |
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/` | Serves the web interface |
+| POST | `/upload` | Uploads and indexes a PDF |
+| POST | `/query` | Answers a question using the indexed PDF |
 
 ### Upload a PDF
 
 ```bash
-curl -F "file=@document.pdf" http://localhost:8000/upload
+curl -X POST \
+  -F "file=@document.pdf" \
+  http://127.0.0.1:8000/upload
 ```
 
-### Ask a question
+Example response:
+
+```json
+{
+  "message": "'document.pdf' indexed successfully!",
+  "filename": "document.pdf"
+}
+```
+
+### Ask a Question
 
 ```bash
-curl -X POST http://localhost:8000/query \
+curl -X POST \
   -H "Content-Type: application/json" \
-  -d '{"question": "What is this document about?"}'
+  -d "{\"question\":\"What is this document about?\"}" \
+  http://127.0.0.1:8000/query
 ```
 
----
+Example response:
 
-## ⚙️ How It Works
+```json
+{
+  "answer": "The answer is generated using relevant context retrieved from the uploaded PDF."
+}
+```
 
-1. **Upload** — user uploads a PDF through the web UI
-2. **Chunk** — the document is split into overlapping text chunks (400 chars, 40 overlap)
-3. **Embed** — each chunk is embedded using `all-MiniLM-L6-v2` via HuggingFace
-4. **Index** — chunks are indexed in ChromaDB for semantic search and BM25 for keyword search
-5. **Query** — user's question retrieves the top chunks using an ensemble of both search methods (hybrid search)
-6. **Answer** — retrieved context + question are sent to `llama3.2` via Ollama to generate an answer
+The example answer above is illustrative; actual responses depend on the uploaded document and the question.
 
----
+## Project Structure
 
-## 📝 License
+```text
+Local-RAG-PDF-QnA-Bot/
+|
+├── main.py
+│   └── FastAPI application and RAG pipeline
+|
+├── requirements.txt
+│   └── Python dependencies
+|
+├── static/
+│   ├── index.html
+│   ├── style.css
+│   └── app.js
+|
+├── .gitignore
+└── README.md
+```
 
-MIT
+The `uploads/` directory is created automatically when the application starts and stores uploaded PDF files at runtime.
+
+## Why Hybrid Search?
+
+Traditional semantic search identifies passages based on the meaning of a query, while keyword-based search can find exact terms, names, and technical phrases.
+
+This project combines both approaches through LangChain's `EnsembleRetriever`:
+
+- **Semantic Search:** ChromaDB retrieves passages based on vector similarity.
+- **Keyword Search:** BM25 retrieves passages based on keyword relevance.
+- **Combined Retrieval:** Both retrievers use equal weights to improve the chances of finding relevant document content.
+
+The retrieved passages are then provided to the LLM as context for answer generation.
+
+## Limitations
+
+- The application currently supports PDF documents only.
+- The application maintains one active RAG chain for the most recently uploaded PDF.
+- Answers depend on the quality of the extracted text and retrieved passages.
+- Ollama and the selected model must be available locally.
+- Embedding models may need to be downloaded during initial setup.
+- The current implementation returns generated answers without explicit source citations in the API response.
+- This is a learning project and should be strengthened with authentication, validation, error handling, and production deployment controls before being used with sensitive documents.
+
+## Future Improvements
+
+- Add source citations with PDF page numbers.
+- Support querying multiple documents simultaneously.
+- Improve retrieval using reranking and retrieval evaluation.
+- Add conversational memory for follow-up questions.
+- Introduce automated tests and improved error handling.
+- Add Docker-based deployment and production configuration.
+- Evaluate retrieval quality and answer relevance using a benchmark dataset.
+
+## Author
+
+**Vishnu Vardhan Reddy Kothapuli**
+
+GitHub: [VishnuVardhanReddyKothapuli](https://github.com/VishnuVardhanReddyKothapuli)
+
+Project Repository: [Local-RAG-PDF-QnA-Bot](https://github.com/VishnuVardhanReddyKothapuli/Local-RAG-PDF-QnA-Bot)
